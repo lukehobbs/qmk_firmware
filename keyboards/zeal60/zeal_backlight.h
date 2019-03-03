@@ -1,41 +1,17 @@
-/* Copyright 2017 Jason Williams (Wilba)
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-#pragma once
-
-#if RGB_BACKLIGHT_ENABLED
-#else
-#error rgb_backlight.h included when RGB_BACKLIGHT_ENABLED == 0
-#endif // RGB_BACKLIGHT_ENABLED
+#ifndef ZEAL_BACKLIGHT_H
+#define ZEAL_BACKLIGHT_H
 
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "quantum/color.h"
-
-typedef struct PACKED
-{
-	uint8_t h;
-	uint8_t s;
-} HS;
+#include "zeal_color.h"
+#include "zeal_rpc.h"
 
 typedef struct
 {
-	HS color;
+	HSV color;
 	uint8_t index;
-} backlight_config_indicator;
+} zeal_indicator;
 
 typedef struct
 {
@@ -51,22 +27,19 @@ typedef struct
 	uint8_t brightness;                 // 1 byte
 	uint8_t effect;                     // 1 byte
 	uint8_t effect_speed;				// 1 byte
-	HS color_1;                         // 2 bytes
-	HS color_2;                         // 2 bytes
-	backlight_config_indicator caps_lock_indicator;	// 3 bytes
-	backlight_config_indicator layer_1_indicator;	// 3 bytes
-	backlight_config_indicator layer_2_indicator;	// 3 bytes
-	backlight_config_indicator layer_3_indicator;	// 3 bytes
+	HSV color_1;                        // 3 bytes
+	HSV color_2;                        // 3 bytes
+	zeal_indicator caps_lock_indicator;	// 4 bytes
+	zeal_indicator layer_1_indicator;	// 4 bytes
+	zeal_indicator layer_2_indicator;	// 4 bytes
+	zeal_indicator layer_3_indicator;	// 4 bytes
 	uint16_t alphas_mods[5];            // 10 bytes
-#if defined(RGB_BACKLIGHT_M6_B)
-	HS custom_color[6];                 // 12 bytes
-#endif
-} backlight_config;                // = 31 bytes (M6-B = 43 bytes)
+} zeal_backlight_config;                // = 37 bytes
 
+void backlight_config_set_values(msg_backlight_config_set_values *values);
+void backlight_config_set_alphas_mods( uint16_t *value );
 void backlight_config_load(void);
 void backlight_config_save(void);
-void backlight_config_set_value( uint8_t *data );
-void backlight_config_get_value( uint8_t *data );
 
 void backlight_init_drivers(void);
 
@@ -82,9 +55,6 @@ void backlight_set_indicator_state(uint8_t state);
 // Call this while idle (in between matrix scans).
 // If the buffer is dirty, it will update the driver with the buffer.
 void backlight_update_pwm_buffers(void);
-
-// Handle backlight specific keycodes
-bool process_record_backlight(uint16_t keycode, keyrecord_t *record);
 
 void backlight_set_key_hit(uint8_t row, uint8_t col);
 
@@ -105,6 +75,14 @@ void backlight_color_2_hue_decrease(void);
 void backlight_color_2_sat_increase(void);
 void backlight_color_2_sat_decrease(void);
 
+
+
+void *backlight_get_key_color_eeprom_address(uint8_t led);
+void backlight_get_key_color( uint8_t led, HSV *hsv );
+void backlight_set_key_color( uint8_t row, uint8_t column, HSV hsv );
+
 void backlight_test_led( uint8_t index, bool red, bool green, bool blue );
+uint32_t backlight_get_tick(void);
 void backlight_debug_led(bool state);
 
+#endif //ZEAL_BACKLIGHT_H
